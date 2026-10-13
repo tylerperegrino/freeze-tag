@@ -1,6 +1,7 @@
 local DataManager = {}
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LevelConfig = require(ReplicatedStorage.Shared.LevelConfig)
 
 -- Store profiles from playerstore
 DataManager.Profiles = {}
@@ -26,11 +27,14 @@ function DataManager.AwardTag(player : Player)
 	if not profile then return end
 
 	profile.Data.Tags += 1
-	profile.Data.Exp += 5
+	profile.Data.Exp += 10
 	
-	while profile.Data.Exp >= 100 do
-		profile.Data.Exp -= 100
+	local requiredExp = LevelConfig.GetRequiredExp(profile.Data.Level)
+
+	while profile.Data.Exp >= requiredExp do
+		profile.Data.Exp -= requiredExp
 		profile.Data.Level += 1
+		requiredExp = LevelConfig.GetRequiredExp(profile.Data.Level)
 	end
 	
 	player.leaderstats.Level.Value = profile.Data.Level	
