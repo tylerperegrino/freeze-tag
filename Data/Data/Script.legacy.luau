@@ -4,13 +4,13 @@ for _, player in game:GetService("Players"):GetPlayers() do
 	while true do
 		task.wait(3)
 		
-		local leaderstats = player:FindFirstChild("leaderstats")
-		if not leaderstats then continue end
+		local currencies = player:FindFirstChild("Currencies")
+		if not currencies then continue end
 		
-		local gems = leaderstats:FindFirstChild("Gems")
+		local gems = currencies:FindFirstChild("Gems")
 		if not gems then continue end
 		
-		local coins = leaderstats:FindFirstChild("Coins")
+		local coins = currencies:FindFirstChild("Coins")
 		if not coins then continue end
 		
 		DataManager.AddGems(player, 5)

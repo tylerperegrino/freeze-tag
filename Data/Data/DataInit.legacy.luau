@@ -22,12 +22,32 @@ local function Initialize(player: Player, profile: typeof(PlayerStore:StartSessi
 	--Leaderstats
 	local leaderstats = Instance.new("Folder", player)
 	leaderstats.Name = "leaderstats"
+	
+	local Level = Instance.new("IntValue", leaderstats)
+	Level.Name = "Level"
+	Level.Value = profile.Data.Level
+	
+	local Wins = Instance.new("IntValue", leaderstats)
+	Wins.Name = "Wins"
+	Wins.Value = profile.Data.Wins
+	
+	local tags = Instance.new("IntValue", leaderstats)
+	tags.Name = "Tags"
+	tags.Value = profile.Data.Tags
+	
+	local Exp = Instance.new("IntValue", player)
+	Exp.Name = "Exp"
+	Exp.Value = profile.Data.Exp
+	
+	local currencies = Instance.new("Folder")
+	currencies.Name = "Currencies"
+	currencies.Parent = player
 
-	local Gems = Instance.new("NumberValue", leaderstats)
+	local Gems = Instance.new("NumberValue", currencies)
 	Gems.Name = "Gems"
 	Gems.Value = profile.Data.Gems
 
-	local Coins = Instance.new("NumberValue", leaderstats)
+	local Coins = Instance.new("NumberValue", currencies)
 	Coins.Name = "Coins"
 	Coins.Value = profile.Data.Coins
 end

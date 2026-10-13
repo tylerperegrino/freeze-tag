@@ -10,7 +10,7 @@ function DataManager.AddGems(player: Player, amount: number)
 	if not profile then warn("No profile found") return end
 
 	profile.Data.Gems += amount
-	player.leaderstats.Gems.Value = profile.Data.Gems
+	player.Currencies.Gems.Value = profile.Data.Gems
 end
 
 function DataManager.AddCoins(player: Player, amount: number)
@@ -18,7 +18,25 @@ function DataManager.AddCoins(player: Player, amount: number)
 	if not profile then warn("No profile found") return end
 
 	profile.Data.Coins += amount
-	player.leaderstats.Coins.Value = profile.Data.Coins
+	player.Currencies.Coins.Value = profile.Data.Coins
+end
+
+function DataManager.AwardTag(player : Player)
+	local profile = DataManager.Profiles[player]
+	if not profile then return end
+
+	profile.Data.Tags += 1
+	profile.Data.Exp += 5
+	
+	while profile.Data.Exp >= 100 do
+		profile.Data.Exp -= 100
+		profile.Data.Level += 1
+	end
+	
+	player.leaderstats.Level.Value = profile.Data.Level	
+	
+	player.leaderstats.Tags.Value = profile.Data.Tags
+	player.Exp.Value = profile.Data.Exp
 end
 
 return DataManager
