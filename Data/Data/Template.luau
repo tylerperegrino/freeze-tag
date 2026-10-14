@@ -5,5 +5,6 @@ return {
 	Wins =0,
 	Level = 1,
 	Exp = 0,
-	Inventory = {}
+	Inventory = {},
+	LastFreeSpin = 0, -- os.time() of the last free prize-wheel spin
 }
