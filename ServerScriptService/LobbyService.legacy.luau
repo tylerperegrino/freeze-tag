@@ -1,6 +1,4 @@
--- LobbyService: the lobby's prize wheel (free spin with a cooldown, pays coins), the map-voting
--- pads (stand on a pad to vote, countdown, winner) and the shop counter prompt.
--- Map voting result: ReplicatedStorage:GetAttribute("SelectedMap") and ServerStorage.MapVoteFinished:Fire(mapName).
+-- LobbyService: the prize wheel, shop, and display of the server-controlled map vote.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
@@ -101,84 +99,33 @@ spinPrompt.Triggered:Connect(function(player)
 end)
 
 --------------------------------------------------------------------------------
--- MAP VOTING
+-- The on-screen vote is owned by RoundManager. The old board only displays it.
 --------------------------------------------------------------------------------
-local voting = Map:WaitForChild("MapVoting")
-local pads = {}
-for i = 1, 3 do
-	local zone = voting:WaitForChild("VoteZone" .. i)
-	local glow
-	for _, p in voting:GetChildren() do
-		if p.Name == "PadGlow" and (p.Position - zone.Position).Magnitude < 3 then glow = p end
+local voting = Map:FindFirstChild("MapVoting")
+local voteState = ReplicatedStorage:WaitForChild("MapVotingState")
+local voteConfig = require(ReplicatedStorage.Shared.MapVotingConfig)
+local function refreshBoard()
+	if not voting then return end
+	local header = voting:FindFirstChild("VoteHeader")
+	local timer = voting:FindFirstChild("VoteTimer")
+	local headerLabel = header and header:FindFirstChild("Label", true)
+	local timerLabel = timer and timer:FindFirstChild("Label", true)
+	if headerLabel then headerLabel.Text = "MAP VOTING" end
+	if timerLabel then
+		local current = voteState:GetAttribute("Phase")
+		timerLabel.Text = current == "MapVoting" and "CHOOSE ON SCREEN" or ""
 	end
-	pads[i] = {
-		zone = zone,
-		radius = zone:GetAttribute("Radius") or 6.9,
-		glow = glow,
-		title = voting:WaitForChild("MapTitle" .. i):FindFirstChild("Label", true),
-		count = voting:WaitForChild("VoteCount" .. i):FindFirstChild("Label", true),
-	}
-	pads[i].title.Text = Config.Voting.Maps[i] or ("Map " .. i)
-end
-local timerLabel = voting:WaitForChild("VoteTimer"):FindFirstChild("Label", true)
-local headerLabel = voting:WaitForChild("VoteHeader"):FindFirstChild("Label", true)
-local GLOW_IDLE = Color3.new(1, 1, 1)
-local GLOW_LEAD = Color3.fromRGB(255, 210, 63)
-
-local function countVotes()
-	local votes = { 0, 0, 0 }
-	for _, plr in Players:GetPlayers() do
-		local char = plr.Character
-		local root = char and char:FindFirstChild("HumanoidRootPart")
-		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		if root and hum and hum.Health > 0 then
-			for i, pad in pads do
-				local d = root.Position - pad.zone.Position
-				if Vector3.new(d.X, 0, d.Z).Magnitude <= pad.radius and d.Y > -1 and d.Y < 8 then
-					votes[i] += 1
-					break
-				end
-			end
-		end
-	end
-	return votes
-end
-
-local function showVotes(votes)
-	local best = math.max(votes[1], votes[2], votes[3])
-	for i, pad in pads do
-		pad.count.Text = votes[i] .. (votes[i] == 1 and " VOTE" or " VOTES")
-		if pad.glow then pad.glow.Color = (best > 0 and votes[i] == best) and GLOW_LEAD or GLOW_IDLE end
+	for index, mapInfo in voteConfig.Maps do
+		local titlePart = voting:FindFirstChild("MapTitle" .. index)
+		local countPart = voting:FindFirstChild("VoteCount" .. index)
+		local title = titlePart and titlePart:FindFirstChild("Label", true)
+		local count = countPart and countPart:FindFirstChild("Label", true)
+		if title then title.Text = mapInfo.Name end
+		if count then count.Text = tostring(voteState:GetAttribute("Votes" .. index) or 0) .. " VOTES" end
 	end
 end
-
-task.spawn(function()
-	while true do
-		headerLabel.Text = "VOTE FOR THE NEXT MAP!"
-		local ends = os.clock() + Config.Voting.RoundTime
-		local votes = { 0, 0, 0 }
-		while os.clock() < ends do
-			votes = countVotes()
-			showVotes(votes)
-			timerLabel.Text = formatTime(ends - os.clock())
-			task.wait(0.25)
-		end
-		-- pick the winner (ties and empty votes are decided at random)
-		local best = math.max(votes[1], votes[2], votes[3])
-		local tied = {}
-		for i = 1, 3 do if votes[i] == best then table.insert(tied, i) end end
-		local winner = tied[math.random(#tied)]
-		local mapName = Config.Voting.Maps[winner] or ("Map " .. winner)
-		ReplicatedStorage:SetAttribute("SelectedMap", mapName)
-		ServerStorage.MapVoteFinished:Fire(mapName)
-		headerLabel.Text = "NEXT MAP: " .. string.upper(mapName) .. "!"
-		timerLabel.Text = ""
-		for i, pad in pads do
-			if pad.glow then pad.glow.Color = (i == winner) and GLOW_LEAD or GLOW_IDLE end
-		end
-		task.wait(Config.Voting.ResultTime)
-	end
-end)
+voteState.AttributeChanged:Connect(refreshBoard)
+refreshBoard()
 
 --------------------------------------------------------------------------------
 -- SHOP COUNTER
@@ -189,4 +136,4 @@ shopPrompt.Triggered:Connect(function(player)
 	Remotes.OpenShop:FireClient(player)
 end)
 
-print("[LobbyService] wheel, map voting and shop ready")
+print("[LobbyService] wheel, shop and map vote display ready")
