@@ -2,8 +2,9 @@
 local destination = "TemporaryTeleportMap.TeleportPoint"
 
 return {
-	MinPlayers = 1,
+	MinPlayers = 2,
 	StartDelaySeconds = 5,
+	FreezerDelaySeconds = 5,
 	IntroSeconds = 1.2,
 	VoteSeconds = 12,
 	ResultSeconds = 1.5,

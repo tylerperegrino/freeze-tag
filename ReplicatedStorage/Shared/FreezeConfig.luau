@@ -70,7 +70,7 @@ local FreezeConfig = {
 	IceBreakDebrisSoundId = "rbxassetid://9118586481", -- rubble settling after the break
 	RescueRange = 8, -- studs from the frozen player
 	RescueProtection = 2, -- seconds a rescued player can't be re-frozen
-	TestAnyoneCanRescue = true, -- TEST ONLY: lets Freezers rescue too (so you can test solo). Set false for real matches.
+	TestAnyoneCanRescue = false, -- Only Runners can rescue teammates now that rounds assign real teams.
 
 	-- Stances
 	WalkSpeed = 16,

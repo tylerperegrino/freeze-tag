@@ -37,7 +37,7 @@ function MovementService.SetStance(char, stance)
 	if not VALID[stance] then return false end
 	local hum = char:FindFirstChildOfClass("Humanoid")
 	if not hum or hum.Health <= 0 then return false end
-	if char:GetAttribute("Frozen") then return false end
+	if char:GetAttribute("Frozen") or char:GetAttribute("RoundLocked") then return false end
 	char:SetAttribute("Stance", stance)
 	hum.WalkSpeed = SPEED[stance]
 	hum.JumpHeight = stance == "Stand" and 7.2 or 0

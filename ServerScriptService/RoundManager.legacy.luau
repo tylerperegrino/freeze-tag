@@ -2,7 +2,9 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 local Config = require(ReplicatedStorage.Shared.MapVotingConfig)
+local TeamService = require(ServerScriptService.Services.TeamService)
 
 local function getOrCreate(className, name, parent)
 	local object = parent:FindFirstChild(name)
@@ -121,6 +123,7 @@ local function moveCharacter(player, character)
 	character:PivotTo(spawnCFrame)
 	root.AssemblyLinearVelocity = Vector3.zero
 	root.AssemblyAngularVelocity = Vector3.zero
+	TeamService.ApplyHeadStart(player, character)
 	return true
 end
 
@@ -229,6 +232,24 @@ while true do
 	status.Value = "Loading " .. map.Name .. "..."
 	waitForPhase(Config.FadeSeconds, false)
 
+	-- Exclude players who left or lost their character during the result animation.
+	local available = {}
+	for _, player in participants do
+		local character = player.Character
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if connected[player] and humanoid and humanoid.Health > 0
+			and character:FindFirstChild("HumanoidRootPart") then
+			table.insert(available, player)
+		end
+	end
+	participants = available
+	if #participants < Config.MinPlayers then
+		clearSelections()
+		setPhase("Waiting")
+		waitingMessage()
+		continue
+	end
+	local freezer = TeamService.AssignRound(participants)
 	local columns = math.ceil(math.sqrt(#participants))
 	local rows = math.ceil(#participants / columns)
 	for slot, player in participants do
@@ -237,12 +258,21 @@ while true do
 			local z = (math.floor((slot - 1) / columns) - (rows - 1) / 2) * 8
 			player:SetAttribute("TestMapSpawn", destination.CFrame * CFrame.new(x, 0, z))
 			player:SetAttribute("InTestMap", true)
-			if player.Character then task.spawn(moveCharacter, player, player.Character) end
+			if player.Character then moveCharacter(player, player.Character) end
 		end
 	end
-	setPhase("TestMap")
-	status.Value = map.Name .. " - Test map"
-	print("[RoundManager] " .. map.Name .. " selected; moved " .. #participants .. " players to the test platform")
+	-- Start the hold after everyone moves, giving Runners a full head start.
+	setPhase("HeadStart", Config.FreezerDelaySeconds)
+	local releaseAt = workspace:GetServerTimeNow() + Config.FreezerDelaySeconds
+	repeat
+		local remaining = math.max(0, math.ceil(releaseAt - workspace:GetServerTimeNow()))
+		status.Value = "Runners, run! Freezer released in " .. remaining .. "..."
+		task.wait(0.05)
+	until workspace:GetServerTimeNow() >= releaseAt or not connected[freezer]
+	for _, player in participants do TeamService.ReleasePlayer(player) end
+	setPhase("Playing")
+	status.Value = connected[freezer] and "Freezer released! Run!" or "Freezer left - restart the playtest"
+	print("[RoundManager] " .. map.Name .. ": " .. freezer.Name .. " is the Freezer; " .. #participants .. " participants")
 	break
 end
 

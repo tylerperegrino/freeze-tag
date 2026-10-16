@@ -276,6 +276,7 @@ local function getCandidates()
 end
 
 local function canSwing(player)
+	if player:GetAttribute("RoundLocked") then return false, "HeadStart" end
 	if player:GetAttribute("Role") ~= "Freezer" then return false, "NotFreezer" end
 	local char = player.Character
 	if not getAlive(char) then return false, "NotAlive" end
